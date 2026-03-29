@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Albion DPS Meter</title>
+  <style>
+    :root {
+      --bg-root:    #0b0b0b;
+      --bg-card:    #111111;
+      --bg-row:     #161616;
+      --border:     #252525;
+      --accent:     #c9a227;
+      --accent-dim: #7a611a;
+      --text:       #e2e2e2;
+      --muted:      #666;
+      --heal-text:  #56c96e;
+      --heal-bg:    rgba(86,201,110,.08);
+      --heal-border:rgba(86,201,110,.28);
+      --bar-dmg:    rgba(201,162,39,.10);
+      --bar-heal:   rgba(86,201,110,.10);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg-root);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── Shared section label ─────────────────────────────── */
+    .sec-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.6px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+    .sec-label::before {
+      content: '';
+      display: inline-block;
+      width: 3px;
+      height: 13px;
+      background: var(--accent);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION 1 · Stats ────────────────────────────────── */
+    #sec-stats {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 14px;
+      flex-shrink: 0;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .stat-box {
+      background: var(--bg-row);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 9px 12px;
+      text-align: center;
+    }
+    .stat-box .lbl {
+      font-size: 9.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-bottom: 5px;
+    }
+    .stat-box .val {
+      font-size: 21px;
+      font-weight: 800;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.5px;
+      line-height: 1;
+    }
+    .stat-box .val.timer { color: var(--text); font-size: 19px; }
+
+    /* ── SECTION 2 · Players ──────────────────────────────── */
+    #sec-players {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .players-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .pill {
+      font-size: 9.5px;
+      background: var(--bg-row);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 9px;
+      color: var(--muted);
+    }
+
+    .col-head {
+      display: grid;
+      grid-template-columns: 22px 1fr 86px 70px;
+      gap: 6px;
+      padding: 0 10px 5px;
+      font-size: 9.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .7px;
+    }
+    .col-head span:nth-child(n+3) { text-align: right; }
+
+    .player-rows { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+
+    .p-row {
+      position: relative;
+      background: var(--bg-row);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .p-row:hover { border-color: var(--accent-dim); }
+    .p-row.healer {
+      background: var(--heal-bg);
+      border-color: var(--heal-border);
+    }
+
+    .bar {
+      position: absolute; inset: 0;
+      width: 0; height: 100%;
+      background: var(--bar-dmg);
+      transition: width .55s ease;
+      pointer-events: none;
+    }
+    .p-row.healer .bar { background: var(--bar-heal); }
+
+    .p-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 22px 1fr 86px 70px;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .rank {
+      font-size: 10px;
+      font-weight: 800;
+      text-align: center;
+      color: var(--muted);
+    }
+    .r1 { color: #ffd700; }
+    .r2 { color: #b0b0b0; }
+    .r3 { color: #cd7f32; }
+
+    .pname {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 13px;
+    }
+    .p-row.healer .pname { color: var(--heal-text); }
+
+    .heal-tag {
+      display: inline-flex;
+      background: rgba(86,201,110,.18);
+      color: var(--heal-text);
+      font-size: 8.5px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 8px;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      vertical-align: middle;
+      margin-left: 5px;
+    }
+
+    .pdmg {
+      text-align: right;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+    }
+    .p-row.healer .pdmg { color: var(--heal-text); }
+
+    .pdps {
+      text-align: right;
+      font-size: 10.5px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Estado: mapa no cargado ──────────────────────────── */
+    #no-map-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-root);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 100;
+    }
+
+    .no-map-icon {
+      width: 64px;
+      height: 64px;
+      opacity: 0.18;
+    }
+
+    .no-map-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+      opacity: 0.55;
+      max-width: 260px;
+      line-height: 1.55;
+    }
+
+    .no-map-sub {
+      font-size: 10.5px;
+      color: var(--muted);
+      text-align: center;
+      max-width: 220px;
+      line-height: 1.6;
+    }
+
+    .no-map-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 13px;
+      font-size: 10px;
+      color: var(--muted);
+      background: var(--bg-card);
+      margin-top: 4px;
+    }
+    .no-map-badge .dot-idle {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+
+    /* ── SECTION 3 · Controls ─────────────────────────────── */
+    #sec-controls {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      padding: 10px 14px;
+      flex-shrink: 0;
+    }
+
+    .ctrl-row {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: none;
+      border-radius: 5px;
+      padding: 7px 13px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .14s;
+      letter-spacing: .2px;
+    }
+
+    .btn-reset {
+      background: var(--accent);
+      color: #0b0b0b;
+    }
+    .btn-reset:hover { background: #e4b82d; transform: translateY(-1px); }
+    .btn-reset:active { transform: translateY(0); }
+
+    .btn-ghost {
+      background: var(--bg-row);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--accent-dim); color: var(--accent); }
+    .btn-ghost.on  { border-color: #c04444; color: #e05555; }
+
+    .vdiv { width: 1px; height: 22px; background: var(--border); }
+
+    .status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9.5px;
+      color: var(--muted);
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #56c96e;
+      animation: blink 2s infinite;
+    }
+    .dot.off { background: #e05555; animation: none; }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: #444; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     PANTALLA: MAPA NO CARGADO
+════════════════════════════════════════════════════════ -->
+<div id="no-map-screen">
+  <svg class="no-map-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 16L24 10L40 18L56 10V48L40 54L24 46L8 54V16Z"
+          stroke="#c9a227" stroke-width="3" stroke-linejoin="round" fill="none"/>
+    <line x1="24" y1="10" x2="24" y2="46" stroke="#c9a227" stroke-width="2" stroke-dasharray="4 3"/>
+    <line x1="40" y1="18" x2="40" y2="54" stroke="#c9a227" stroke-width="2" stroke-dasharray="4 3"/>
+    <line x1="4"  y1="32" x2="60" y2="32" stroke="#c04444" stroke-width="2.5" stroke-linecap="round"
+          transform="rotate(45 32 32)"/>
+  </svg>
+
+  <div class="no-map-title">El mapa no ha sido cargado aún,<br>cambia de mapa para comenzar</div>
+
+  <div class="no-map-sub">La sesión arrancará automáticamente<br>en cuanto entres a una zona</div>
+
+  <div class="no-map-badge">
+    <span class="dot-idle"></span>
+    Esperando zona…
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECCIÓN 1 · Estadísticas de sesión
+════════════════════════════════════════════════════════ -->
+<section id="sec-stats">
+  <div class="sec-label">Sesión activa</div>
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="lbl">⏱ Tiempo</div>
+      <div class="val timer" id="el-timer">00:00:00</div>
+    </div>
+    <div class="stat-box">
+      <div class="lbl">⭐ Fama total</div>
+      <div class="val" id="el-fame">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="lbl">📈 Fama/hora</div>
+      <div class="val" id="el-fph">0</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECCIÓN 2 · Lista de jugadores
+════════════════════════════════════════════════════════ -->
+<section id="sec-players">
+  <div class="players-header">
+    <div class="sec-label" style="margin-bottom:0">Jugadores</div>
+    <div class="pill" id="el-count">0 jugadores</div>
+  </div>
+  <div class="col-head">
+    <span>#</span><span>Nombre</span>
+    <span>Daño total</span><span>DPS</span>
+  </div>
+  <div class="player-rows" id="el-rows"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECCIÓN 3 · Controles
+════════════════════════════════════════════════════════ -->
+<section id="sec-controls">
+  <div class="sec-label">Controles</div>
+  <div class="ctrl-row">
+    <button class="btn-reset" id="reset-button">↺ Reiniciar</button>
+    <button class="btn-ghost" id="btn-pause" onclick="togglePause()">⏸ Pausar</button>
+    <div class="vdiv"></div>
+    <button class="btn-ghost" onclick="toggleDemo()" id="btn-demo">🎲 Demo</button>
+    <div class="status">
+      <div class="dot off" id="el-dot"></div>
+      <span id="el-status">Esperando mapa</span>
+    </div>
+  </div>
+</section>
+<script type="module" src="./src/renderer.js"></script>
+</body>
+</html>
