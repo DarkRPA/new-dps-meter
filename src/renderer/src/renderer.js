@@ -240,6 +240,7 @@ async function resetAll() {
   }
 
   t0 = Date.now();
+  pausedTotal = 0;
   if (paused) _unpause()
   
   window.mainApi.sendReset();

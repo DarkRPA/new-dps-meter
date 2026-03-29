@@ -15,6 +15,7 @@ export class NetworkListerner {
   static playerList: Array<Player> = []
   static totalFame: number = 0
   static paused:boolean = false;
+  static foundPlayers:Array<number> = [];
 
   public init(): void {
     if (this.networkInstance == undefined) {
@@ -46,13 +47,16 @@ function onLocalPlayerUpdate(context: any): void {
 function updatePlayerId(parametros: any): void {
   //console.log(parametros);
   let player = findByName(parametros[1])
-  if (!player) return
+  if (!player) {
+    NetworkListerner.foundPlayers[parametros[1]] = parametros[0];
+    return;
+  }
 
-  player.guid = parametros[0]
+  player.id = parametros[0]
 }
 
 function enterToParty(parametros: any): void {
-  console.log(parametros)
+  //console.log(parametros)
   let playersInParty = parametros[6]
   let playersPeroNumerosRaros = parametros[5]
 
@@ -62,6 +66,12 @@ function enterToParty(parametros: any): void {
     let nP = playersPeroNumerosRaros[i]
 
     let player = new Player(0, p)
+
+    let playerId = NetworkListerner.foundPlayers[p];
+    if(playerId){
+      player.id = playerId;
+    }
+
     player.guid = nP
     NetworkListerner.playerList.push(player)
     ViewController.instance.sendPlayerAdded(player);
@@ -79,6 +89,13 @@ export function findByName(value: string | number, byName = true): Player | unde
     } else {
       if (pList[i]!.id == value) {
         return pList[i]
+      }else if(NetworkListerner.foundPlayers[pList[i].name]){
+        //Somehow the player got its id messed up by a lot
+        let idFromFound = NetworkListerner.foundPlayers[pList[i].name];
+        if(idFromFound == value){
+          pList[i].id = idFromFound;
+          return pList[i];
+        }
       }
     }
   }
@@ -156,7 +173,15 @@ function route(contexto: any) {
       break
     case 6:
       //Golpea enemigo
-      hitEnemy(params)
+      let causante = params[6];
+      let dano = params[2];
+      hitEnemy(causante, dano);
+      break
+    case 7:
+      let causantes:Array<number> = params[6];
+      for(let i = 0; i < causantes.length; i++){
+        hitEnemy(causantes[i], params[2][i]);
+      }
       break
     case 82:
       //Obtenemos fama
@@ -207,14 +232,14 @@ function playerJoinParty(parametros: any): void {
   let guid = parametros[1]
   let id = parametros[0]
 
-  console.log(parametros)
+  //console.log(parametros)
 
   if (id == -1) {
     console.log('Nani')
   }
 
   let player = new Player(id, name)
-  player.id = guid
+  player.guid = guid
 
   NetworkListerner.playerList.push(player)
   ViewController.instance.sendPlayerAdded(player);
@@ -237,10 +262,10 @@ function leaveParty(parametros: any): void {
 
 }
 
-function hitEnemy(parametros: any): void {
+function hitEnemy(causante:number, damage:number): void {
   if(NetworkListerner.paused) return;
-  let causante = parametros[6]
-  let damage = parametros[2]
+  //console.log(parametros);
+  //console.log(NetworkListerner.foundPlayers);
   let player = findById(causante)
   if (!player) return
 
@@ -267,6 +292,7 @@ function onMapChange(params: any) {
   let playerList = NetworkListerner.playerList
   if (Main.StartingTime == -1) Main.StartingTime = performance.now()
   let instance:ViewController = ViewController.instance;
+  NetworkListerner.foundPlayers = [];
 
   if (playerList[0] == undefined) {
     playerList[0] = new Player(params[0], params[2])
@@ -278,7 +304,7 @@ function onMapChange(params: any) {
     playerList[0].guid = params[1]
   }
 
-  console.log(playerList[0])
+  //console.log(playerList[0])
 
   instance.sendMapChanged();
 

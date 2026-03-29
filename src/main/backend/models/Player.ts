@@ -7,6 +7,8 @@
 import { Shard } from './Shard.js'
 import { DamagePacket } from './DamagePacket.js'
 
+export const GLOBAL_PULL_TIME = 6;
+
 export class Player {
   id:number = -1;
   guid: Array<Number> = []
@@ -58,7 +60,8 @@ export class Player {
       totalWaitingTime += shard?.shardStart! - previousShard?.shardEnd!
     }
 
-    return totalWaitingTime / (this.shardList.length - 1)
+    //return (totalWaitingTime / (this.shardList.length - 1))/1000
+    return 6;
   }
 
   getTotalDamage(): number{

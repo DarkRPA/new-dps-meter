@@ -2,7 +2,7 @@
 /* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { DamagePacket } from './DamagePacket.js'
-import { Player } from './Player.js'
+import { GLOBAL_PULL_TIME, Player } from './Player.js'
 
 export class Shard {
   averageTimePerPull: number = 0
@@ -53,9 +53,11 @@ export class Shard {
 
   getElapsedTime(): number {
     let firstPacket = this.packetList[0]
-    let lastPacket = this.packetList[this.packetList.length - 1]
 
-    return (lastPacket?.timestamp! - firstPacket?.timestamp!) / 1000
+    let firstTimestamp = firstPacket.timestamp;
+    let secondTimestamp = (this.packetList.length > 1)?this.packetList[this.packetList.length-1].timestamp:GLOBAL_PULL_TIME*1000;
+
+    return (secondTimestamp - firstTimestamp) / 1000
   }
 
   getDPS(): number {
