@@ -131,30 +131,7 @@ function esc(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-/* ══════════════════════════════════════════════════════════
-   RENDER
-══════════════════════════════════════════════════════════ */
-async function render() {
-  if (!mapLoaded) return
-
-  setFame(await window.mainApi.getFame());
-
-  const ms = elapsed()
-  const sec = Math.max(ms / 1000, 1)
-  const fph = (totalFame / sec) * 3600
-
-  for(let i = 0; i < players.length; i++){
-    let p = players[i];
-    let dmg = await window.mainApi.getDamageAndDPS(p.name);
-    setDamage(p.name, dmg.damage);
-  }
-
-  console.log(performance.now());
-
-  document.getElementById('el-timer').textContent = fmtTime(ms)
-  document.getElementById('el-fame').textContent = fmt(totalFame)
-  document.getElementById('el-fph').textContent = fmt(fph)
-
+async function getPlayersDpsSortered(){
   const list = Object.values(players)
   if (!list.length) {
     document.getElementById('el-rows').innerHTML = ''
@@ -182,6 +159,35 @@ async function render() {
     else
       removePlayer(p.name);
   }
+
+  return list;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════════════ */
+async function render() {
+  if (!mapLoaded) return
+
+  setFame(await window.mainApi.getFame());
+
+  const ms = elapsed()
+  const sec = Math.max(ms / 1000, 1)
+  const fph = (totalFame / sec) * 3600
+
+  for(let i = 0; i < players.length; i++){
+    let p = players[i];
+    let dmg = await window.mainApi.getDamageAndDPS(p.name);
+    setDamage(p.name, dmg.damage);
+  }
+
+  console.log(performance.now());
+
+  document.getElementById('el-timer').textContent = fmtTime(ms)
+  document.getElementById('el-fame').textContent = fmt(totalFame)
+  document.getElementById('el-fph').textContent = fmt(fph)
+
+  let list = await getPlayersDpsSortered();  
 
   console.log()
 
