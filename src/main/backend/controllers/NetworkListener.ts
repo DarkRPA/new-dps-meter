@@ -29,6 +29,10 @@ export class NetworkListerner {
     this.networkInstance!.on(this.networkInstance!.AODecoder.messageType.OperationResponse, onLocalPlayerUpdate)
     this.networkInstance!.on(this.networkInstance!.AODecoder.messageType.OperationRequest, onLocalPlayerUpdate)
   }
+
+  public static playerHasId(name:string){
+    return (NetworkListerner.foundPlayers[name] != undefined);
+  }
 }
 
 function onLocalPlayerUpdate(context: any): void {
@@ -44,15 +48,11 @@ function onLocalPlayerUpdate(context: any): void {
   }
 }
 
+let counter = 0;
 function updatePlayerId(parametros: any): void {
   //console.log(parametros);
-  let player = findByName(parametros[1])
-  if (!player) {
-    NetworkListerner.foundPlayers[parametros[1]] = parametros[0];
-    return;
-  }
-
-  player.id = parametros[0]
+  NetworkListerner.foundPlayers[parametros[1]] = parametros[0];
+  console.log(counter++, parametros[1], parametros[0]);
 }
 
 function enterToParty(parametros: any): void {
@@ -65,12 +65,7 @@ function enterToParty(parametros: any): void {
     if (findByName(p)) continue
     let nP = playersPeroNumerosRaros[i]
 
-    let player = new Player(0, p)
-
-    let playerId = NetworkListerner.foundPlayers[p];
-    if(playerId){
-      player.id = playerId;
-    }
+    let player = new Player(p)
 
     player.guid = nP
     NetworkListerner.playerList.push(player)
@@ -87,13 +82,10 @@ export function findByName(value: string | number, byName = true): Player | unde
         return pList[i]
       }
     } else {
-      if (pList[i]!.id == value) {
-        return pList[i]
-      }else if(NetworkListerner.foundPlayers[pList[i].name]){
+      if(NetworkListerner.foundPlayers[pList[i].name]){
         //Somehow the player got its id messed up by a lot
         let idFromFound = NetworkListerner.foundPlayers[pList[i].name];
         if(idFromFound == value){
-          pList[i].id = idFromFound;
           return pList[i];
         }
       }
@@ -151,6 +143,8 @@ export function reloadEverything(){
     }
 }
 
+const test:any = [];
+
 function route(contexto: any) {
   let params = contexto.parameters
 
@@ -173,11 +167,15 @@ function route(contexto: any) {
       break
     case 6:
       //Golpea enemigo
+      console.log(NetworkListerner.foundPlayers);
+      console.log(params);
       let causante = params[6];
       let dano = params[2];
       hitEnemy(causante, dano);
       break
     case 7:
+      console.log(NetworkListerner.foundPlayers);
+      console.log(params);
       let causantes:Array<number> = params[6];
       for(let i = 0; i < causantes.length; i++){
         hitEnemy(causantes[i], params[2][i]);
@@ -189,7 +187,9 @@ function route(contexto: any) {
       break
     case 29:
       //Update ID player
+      test.push(params);
       updatePlayerId(params)
+      console.log(params);
       break
   }
 }
@@ -292,17 +292,18 @@ function onMapChange(params: any) {
   let playerList = NetworkListerner.playerList
   if (Main.StartingTime == -1) Main.StartingTime = performance.now()
   let instance:ViewController = ViewController.instance;
-  NetworkListerner.foundPlayers = [];
+  //NetworkListerner.foundPlayers = [];
 
   if (playerList[0] == undefined) {
-    playerList[0] = new Player(params[0], params[2])
+    playerList[0] = new Player(params[2])
     playerList[0].isLocalPlayer = true
     playerList[0].guid = params[1]
     instance.sendPlayerAdded(playerList[0]);
   } else {
-    playerList[0].id = params[0];
     playerList[0].guid = params[1]
   }
+
+  NetworkListerner.foundPlayers[params[2]] = params[0];
 
   //console.log(playerList[0])
 

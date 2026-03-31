@@ -7,10 +7,9 @@
 import { Shard } from './Shard.js'
 import { DamagePacket } from './DamagePacket.js'
 
-export const GLOBAL_PULL_TIME = 6;
+export const GLOBAL_PULL_TIME = 2;
 
 export class Player {
-  id:number = -1;
   guid: Array<Number> = []
   name: string = ''
   shardList: Array<Shard> = []
@@ -18,9 +17,8 @@ export class Player {
   averageTimeBetweenPulls: number = 6
   isLocalPlayer: boolean = false
 
-  constructor(id:number, name: string, guid?: Array<Number>) {
+  constructor(name: string, guid?: Array<Number>) {
     //this.id = Math.floor((Math.random()*10))
-    this.id = id;
     if(guid)
       this.guid = guid;
     this.name = name;

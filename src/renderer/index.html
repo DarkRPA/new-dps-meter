@@ -19,6 +19,8 @@
       --heal-border:rgba(86,201,110,.28);
       --bar-dmg:    rgba(201,162,39,.10);
       --bar-heal:   rgba(86,201,110,.10);
+      --id-not-found-bg: rgba(214, 96, 52, 0.1);
+      --id-not-found-border: rgba(214, 96, 52, 0.28);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -147,6 +149,11 @@
     .p-row.healer {
       background: var(--heal-bg);
       border-color: var(--heal-border);
+    }
+
+    .p-row.not-id {
+      background: var(--id-not-found-bg);
+      border-color: var(--id-not-found-border);
     }
 
     .bar {

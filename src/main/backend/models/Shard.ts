@@ -55,9 +55,9 @@ export class Shard {
     let firstPacket = this.packetList[0]
 
     let firstTimestamp = firstPacket.timestamp;
-    let secondTimestamp = (this.packetList.length > 1)?this.packetList[this.packetList.length-1].timestamp:GLOBAL_PULL_TIME*1000;
+    let secondTimestamp = (this.packetList.length > 1)?this.packetList[this.packetList.length-1].timestamp:firstTimestamp+(GLOBAL_PULL_TIME*1000);
 
-    return (secondTimestamp - firstTimestamp) / 1000
+    return Math.abs((secondTimestamp - firstTimestamp)) / 1000
   }
 
   getDPS(): number {
