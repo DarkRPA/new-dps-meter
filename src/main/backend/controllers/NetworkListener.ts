@@ -36,7 +36,6 @@ export class NetworkListerner {
 }
 
 function onLocalPlayerUpdate(context: any): void {
-  //console.log(context.parameters);
   if (context.operationCode == 1) {
     let params = context.parameters
     let code = params['253']
@@ -48,15 +47,11 @@ function onLocalPlayerUpdate(context: any): void {
   }
 }
 
-let counter = 0;
 function updatePlayerId(parametros: any): void {
-  //console.log(parametros);
   NetworkListerner.foundPlayers[parametros[1]] = parametros[0];
-  console.log(counter++, parametros[1], parametros[0]);
 }
 
 function enterToParty(parametros: any): void {
-  //console.log(parametros)
   let playersInParty = parametros[6]
   let playersPeroNumerosRaros = parametros[5]
 
@@ -135,10 +130,7 @@ export function getFamePerHour() {
 
 export function reloadEverything(){
     NetworkListerner.totalFame = 0;
-    if(NetworkListerner.playerList[0]){
-        NetworkListerner.playerList[0].restartDmg();
-    }
-    for(let i = 1; i < NetworkListerner.playerList.length; i++){
+    for(let i = 0; i < NetworkListerner.playerList.length; i++){
         NetworkListerner.playerList[i].restartDmg();
     }
 }
@@ -148,12 +140,21 @@ const test:any = [];
 function route(contexto: any) {
   let params = contexto.parameters
 
+  
+
   if (contexto.code == 3) return
-  //console.log(params);
+
+  if(contexto.parameters["252"] >= 229 && contexto.parameters["252"] <= 250){
+    console.log(params);
+  }
+
   switch (contexto.parameters['252']) {
     case 229:
       enterToParty(params)
       break
+    case 237:
+      console.log();
+      break;
     case 230:
       leaveParty([0, NetworkListerner.playerList[0].guid]);
       break;
@@ -167,15 +168,11 @@ function route(contexto: any) {
       break
     case 6:
       //Golpea enemigo
-      console.log(NetworkListerner.foundPlayers);
-      console.log(params);
       let causante = params[6];
       let dano = params[2];
       hitEnemy(causante, dano);
       break
     case 7:
-      console.log(NetworkListerner.foundPlayers);
-      console.log(params);
       let causantes:Array<number> = params[6];
       for(let i = 0; i < causantes.length; i++){
         hitEnemy(causantes[i], params[2][i]);
@@ -189,7 +186,6 @@ function route(contexto: any) {
       //Update ID player
       test.push(params);
       updatePlayerId(params)
-      console.log(params);
       break
   }
 }
@@ -232,8 +228,6 @@ function playerJoinParty(parametros: any): void {
   let guid = parametros[1]
   let id = parametros[0]
 
-  //console.log(parametros)
-
   if (id == -1) {
     console.log('Nani')
   }
@@ -264,8 +258,6 @@ function leaveParty(parametros: any): void {
 
 function hitEnemy(causante:number, damage:number): void {
   if(NetworkListerner.paused) return;
-  //console.log(parametros);
-  //console.log(NetworkListerner.foundPlayers);
   let player = findById(causante)
   if (!player) return
 
@@ -304,8 +296,6 @@ function onMapChange(params: any) {
   }
 
   NetworkListerner.foundPlayers[params[2]] = params[0];
-
-  //console.log(playerList[0])
 
   instance.sendMapChanged();
 

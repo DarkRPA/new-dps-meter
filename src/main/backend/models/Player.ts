@@ -32,7 +32,14 @@ export class Player {
   startTest() {
     setInterval(() => {
       this.addRandomPacket()
-    }, Math.random() * 10000)
+      this.addRandomPacket()
+      this.addRandomPacket()
+      this.addRandomPacket()
+      this.addRandomPacket()
+      this.addRandomPacket()
+      this.addRandomPacket()
+
+    }, Math.random() * 30)
   }
 
   addPacket(DamagePacket: DamagePacket) {

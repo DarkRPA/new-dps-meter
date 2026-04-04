@@ -30,12 +30,9 @@ window.mainApi.onMapLoad((data)=>{
 });
 
 window.mainApi.onPlayerAdded((data)=>{
-  console.log("hsss", data)
   if(!exists(data)){
-    console.log("como")
     setDamage(data, 0, false);
   }else{
-    console.log("what")
   }
 });
 
@@ -129,6 +126,7 @@ function fmtTime(ms) {
 }
 
 function esc(s) {
+  if(!s) return "";
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
@@ -149,8 +147,6 @@ async function render() {
     let dmg = await window.mainApi.getDamageAndDPS(p.name);
     setDamage(p.name, dmg.damage, dmg.idFound);
   }
-
-  console.log(players);
 
   document.getElementById('el-timer').textContent = fmtTime(ms)
   document.getElementById('el-fame').textContent = fmt(totalFame)
@@ -183,8 +179,6 @@ async function render() {
     else
       removePlayer(p.name);
   }
-
-  console.log(players);
 
   const html = list
     .map((p) => {
@@ -234,6 +228,8 @@ document.getElementById("btn-pause").addEventListener("click", ()=>{
    CONTROLES
 ══════════════════════════════════════════════════════════ */
 async function resetAll() {
+
+
   players = [];
   let gottenPlayers = await window.mainApi.getPlayers();
   for(let i = 0; i < gottenPlayers.length; i++){
@@ -245,6 +241,8 @@ async function resetAll() {
   if (paused) _unpause()
   
   window.mainApi.sendReset();
+
+
   render()
 }
 

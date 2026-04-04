@@ -8,6 +8,8 @@ export class Shard {
   averageTimePerPull: number = 0
   packetList: Array<DamagePacket> = []
   lastPacket: DamagePacket | null = null
+  finalDamage:number|undefined;
+  finalElapsedTime:number|undefined;
   shardStart: number = 0
   shardEnd: number = 0
 
@@ -42,22 +44,41 @@ export class Shard {
   getTotalDamage(): number {
     let result: number = 0
 
+    if(this.shardEnd && this.finalDamage){
+      return this.finalDamage;
+    }
+
     for (let i = 0; i < this.packetList.length; i++) {
       let paqueteActual = this.packetList[i]
 
       result += paqueteActual?.dmg!
     }
 
+    if(this.shardEnd){
+      this.finalDamage = result;
+    }
+
     return result
   }
 
   getElapsedTime(): number {
+    if(this.shardEnd && this.finalElapsedTime){
+      return this.finalElapsedTime;
+    }
+
     let firstPacket = this.packetList[0]
+    let result = 0;
 
     let firstTimestamp = firstPacket.timestamp;
     let secondTimestamp = (this.packetList.length > 1)?this.packetList[this.packetList.length-1].timestamp:firstTimestamp+(GLOBAL_PULL_TIME*1000);
 
-    return Math.abs((secondTimestamp - firstTimestamp)) / 1000
+    result = Math.abs((secondTimestamp - firstTimestamp)) / 1000;
+
+    if(this.shardEnd){
+      this.finalElapsedTime = result;
+    }
+
+    return result;
   }
 
   getDPS(): number {
