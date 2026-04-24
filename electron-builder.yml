@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: new-dps-meter
+appId: org.eryos.albion.dpsmeter
+productName: albion-new-dps-meter
 directories:
   buildResources: build
 files:
@@ -12,7 +12,8 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: new-dps-meter
+  executableName: albion-new-dps-meter
+  target: portable
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
